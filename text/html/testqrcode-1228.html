@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>测试二维码扫描</title>
+</head>
+<body>
+
+<body>
+  <h1>扫码结果: </h1>
+  <p id = "result"></p>
+  <br><button id = "scan">发起扫码</button>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#scan").click(function() {
+            startScan();
+        });
+    });
+
+    // 调用航天云智 JS API
+    function startScan() {
+        if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
+            if ((typeof window.webkit != "undefined") &&
+                (typeof window.webkit.messageHandlers != "undefined") &&
+                (typeof window.webkit.messageHandlers.iOSWebViewClient != "undefined")) {
+
+                // 判断在遥测云 iOS App 内
+
+                // 必须声明 setupWebViewJavascriptBridge 方法，代码如下：
+                function setupWebViewJavascriptBridge(callback) {
+                    if (window.WebViewJavascriptBridge) {
+                        return callback(WebViewJavascriptBridge);
+                    }
+                    if (window.WVJBCallbacks) {
+                        return window.WVJBCallbacks.push(callback);
+                    }
+                    window.WVJBCallbacks = [callback];
+                    var WVJBIframe = document.createElement('iframe');
+                    WVJBIframe.style.display = 'none';
+                    WVJBIframe.src = 'https://__bridge_loaded__';
+                    document.documentElement.appendChild(WVJBIframe);
+                    setTimeout(function () {
+                        document.documentElement.removeChild(WVJBIframe)
+                    }, 0)
+                }
+
+                // 注册自定义 JS 方法回调函数
+                setupWebViewJavascriptBridge(function (bridge) {
+                    bridge.callHandler('scanQrCode', function (response) {
+
+                    })
+                })
+
+            } else {
+                // 不在遥测云 iOS APP 中
+                console.log("没有进入遥测云APP")
+                // alert('不在遥测云 iOS APP 中')
+            }
+
+        } else if (/(Android)/i.test(navigator.userAgent)) {
+            if (typeof androidWebViewClient != "undefined") {
+                // 判断在遥测云 Android App 中
+                androidWebViewClient.invokeAndroidMethodAsync("scan-qrcode", "");
+
+            } else {
+                // 不在遥测云 Android APP 中，
+                console.log("没有进入遥测云APP")
+                // alert('不在遥测云 Android APP 中')
+            }
+        }
+        // 判断是否为 PC 版
+        else if(typeof window.akeyJSBridge != "undefined" && typeof window.akeyJSBridge.getCurrentUserInfo != "undefined") {
+            // 接口为异步调用，返回值为 response
+            window.akeyJSBridge.scanQrCode(function(response) {
+
+            })
+        }
+    }
+
+    // Android 异步回调
+    function handleAction(action, data) {
+        console.log("handle action " + data);
+        if (action == "scan-qrcode") {
+            $("#result").text(data)
+        }
+
+    }
+    
+</script>
+</body>
+</html>
